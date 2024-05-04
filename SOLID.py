@@ -4,6 +4,7 @@ Created on Fri May  3 17:31:23 2024
 
 @author: gyane
 """
+from abc import ABC, abstractmethod
 
 class Order:
     items = []
@@ -23,23 +24,35 @@ class Order:
             total += self.quantities[i] * self.prices[i]
         return total
     
-   
-class PaymentProcessor:
-    def pay_debit(self, order, security_code):
+     
+class PaymentProcessor(ABC):
+    @abstractmethod
+    def pay(self, order, security_code):
+        pass
+        
+class DebitPaymentProcessor(PaymentProcessor):
+    def pay(self, order, security_code):
         print("Processing debit payment type")
         print("Verifying security code: {security_code}") 
         order.status = "paid"
-        
-    def pay_credit(self, order, security_code):
+
+class CreditPaymentProcessor(PaymentProcessor):
+    def pay(self, order, security_code):
         print("Processing credit payment type")
         print("Verifying security code: {security_code}") 
         order.status = "paid"
-            
+
+class PaypalPaymentProcessor(PaymentProcessor):
+    def pay(self, order, security_code):
+        print("Processing Paypal payment type")
+        print("Verifying security code: {security_code}") 
+        order.status = "paid"
+         
 order = Order()
 order.add_item("Keyboard", 1, 50)
 order.add_item("ssD", 1, 150)
 order.add_item("USB Cable", 2, 5)
 
 print (order.total_price())
-pp = PaymentProcessor()
-pp.pay_debit(order, "046738")
+pp = PaypalPaymentProcessor()
+pp.pay(order, "046738")
