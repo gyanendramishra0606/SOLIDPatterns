@@ -25,29 +25,30 @@ class Order:
         return total
     
 
+class SMSAuth:
+    authorized = False
+    
+    def verify_code(self, code):
+        print(f"Verifying code - {code}")
+        self.authorized = True
+        
+    def is_authorized(self) -> bool:
+        return self.authorized
+        
 class PaymentProcessor(ABC):
     @abstractmethod
     def pay(self, order):
         pass
    
 
-        
-class PaymentProcessor_SMS(PaymentProcessor):
-    @abstractmethod
-    def auth_sms(self, code):
-        pass
-    
-class DebitPaymentProcessor(PaymentProcessor_SMS):
-    def __init__(self, security_code):
+class DebitPaymentProcessor(PaymentProcessor):
+    def __init__(self, security_code, authorizer : SMSAuth):
+        self.authorizer = authorizer
         self.security_code = security_code
-        self.verified = False
-        
-    def auth_sms(self, code):
-        print(f"Verfying SMS code - {code}")
-        self.verified = True
+
         
     def pay(self, order):
-        if not self.verified:
+        if not self.authorizer.is_authorized():
             raise Exception("Not authorized")
         print("Processing debit payment type")
         print(f"Verifying security code: {self.security_code}") 
@@ -62,17 +63,14 @@ class CreditPaymentProcessor(PaymentProcessor):
         print(f"Verifying security code: {self.security_code}") 
         order.status = "paid"
 
-class PaypalPaymentProcessor(PaymentProcessor_SMS):
-    def __init__(self, email_address):
+class PaypalPaymentProcessor(PaymentProcessor):
+    def __init__(self, email_address, authorizer : SMSAuth):
+        self.authorizer = authorizer
         self.email_address = email_address
         self.verified = False
         
-    def auth_sms(self, code):
-        print(f"Verifying SMS code - {code}")
-        self.verified = True
-        
     def pay(self, order):
-        if not self.verified:
+        if not self.authorizer.is_authorized():
             raise Exception("Payment not authorized")
         print("Processing Paypal payment type")
         print(f"Verifying email address: {self.email_address}") 
@@ -85,6 +83,7 @@ order.add_item("ssD", 1, 150)
 order.add_item("USB Cable", 2, 5)
 
 print (order.total_price())
-pp = PaypalPaymentProcessor("abc@gmail.com")
-pp.auth_sms("1234")
+authorizer = SMSAuth()
+pp = PaypalPaymentProcessor("abc@gmail.com", authorizer)
+authorizer.verify_code("1234")
 pp.pay(order)
