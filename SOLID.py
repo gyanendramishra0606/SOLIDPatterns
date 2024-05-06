@@ -24,17 +24,29 @@ class Order:
             total += self.quantities[i] * self.prices[i]
         return total
     
-     
+
 class PaymentProcessor(ABC):
     @abstractmethod
     def pay(self, order):
+        pass
+    #Problem: This method is not supported by all the child classes e.g. CreditPaymentProcessor. Solution would be to follow the Interface Segregation Priciple and put it in 
+    # a different interface
+    @abstractmethod
+    def auth_sms(self, code):
         pass
         
 class DebitPaymentProcessor(PaymentProcessor):
     def __init__(self, security_code):
         self.security_code = security_code
+        self.verified = False
+        
+    def auth_sms(self, code):
+        print(f"Verfying SMS code - {code}")
+        self.verified = True
         
     def pay(self, order):
+        if not self.verified:
+            raise Exception("Not authorized")
         print("Processing debit payment type")
         print(f"Verifying security code: {self.security_code}") 
         order.status = "paid"
@@ -42,6 +54,9 @@ class DebitPaymentProcessor(PaymentProcessor):
 class CreditPaymentProcessor(PaymentProcessor):
     def __init__(self, security_code):
         self.security_code = security_code
+        
+    def auth_sms(self, code):
+        raise Exception("Credit card payment type does not support SMS code authorization") #This is a voilation of Liskov Subs Princ
         
     def pay(self, order):
         print("Processing credit payment type")
@@ -51,8 +66,15 @@ class CreditPaymentProcessor(PaymentProcessor):
 class PaypalPaymentProcessor(PaymentProcessor):
     def __init__(self, email_address):
         self.email_address = email_address
+        self.verified = False
+        
+    def auth_sms(self, code):
+        print(f"Verifying SMS code - {code}")
+        self.verified = True
         
     def pay(self, order):
+        if not self.verified:
+            raise Exception("Payment not authorized")
         print("Processing Paypal payment type")
         print(f"Verifying email address: {self.email_address}") 
         order.status = "paid"
@@ -65,4 +87,5 @@ order.add_item("USB Cable", 2, 5)
 
 print (order.total_price())
 pp = PaypalPaymentProcessor("abc@gmail.com")
+pp.auth_sms("1234")
 pp.pay(order)
