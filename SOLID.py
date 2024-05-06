@@ -29,13 +29,15 @@ class PaymentProcessor(ABC):
     @abstractmethod
     def pay(self, order):
         pass
-    #Problem: This method is not supported by all the child classes e.g. CreditPaymentProcessor. Solution would be to follow the Interface Segregation Priciple and put it in 
-    # a different interface
+   
+
+        
+class PaymentProcessor_SMS(PaymentProcessor):
     @abstractmethod
     def auth_sms(self, code):
         pass
-        
-class DebitPaymentProcessor(PaymentProcessor):
+    
+class DebitPaymentProcessor(PaymentProcessor_SMS):
     def __init__(self, security_code):
         self.security_code = security_code
         self.verified = False
@@ -54,16 +56,13 @@ class DebitPaymentProcessor(PaymentProcessor):
 class CreditPaymentProcessor(PaymentProcessor):
     def __init__(self, security_code):
         self.security_code = security_code
-        
-    def auth_sms(self, code):
-        raise Exception("Credit card payment type does not support SMS code authorization") #This is a voilation of Liskov Subs Princ
-        
+          
     def pay(self, order):
         print("Processing credit payment type")
         print(f"Verifying security code: {self.security_code}") 
         order.status = "paid"
 
-class PaypalPaymentProcessor(PaymentProcessor):
+class PaypalPaymentProcessor(PaymentProcessor_SMS):
     def __init__(self, email_address):
         self.email_address = email_address
         self.verified = False
